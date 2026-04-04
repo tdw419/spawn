@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Local dev server for Paperclip Cloud API
+ * Local dev server for Spawn Cloud API
  * Simulates the Cloudflare Worker for testing
  *
  * Usage: node dev-server.js
@@ -103,7 +103,7 @@ const server = http.createServer(async (req, res) => {
           index: 0,
           message: {
             role: 'assistant',
-            content: `[Dev mode] Paperclip Cloud proxy is working. Token ${token.slice(0, 8)}... request ${data.daily_used}/${data.daily_limit}. Set OPENAI_API_KEY env var to proxy real requests.`,
+            content: `[Dev mode] Spawn Cloud proxy is working. Token ${token.slice(0, 8)}... request ${data.daily_used}/${data.daily_limit}. Set OPENAI_API_KEY env var to proxy real requests.`,
           },
           finish_reason: 'stop',
         }],
@@ -162,7 +162,7 @@ function readBody(req) {
 }
 
 server.listen(PORT, () => {
-  console.log(`\n  Paperclip Cloud Dev Server`);
+  console.log(`\n  Spawn Cloud Dev Server`);
   console.log(`  http://localhost:${PORT}`);
   console.log(`  Daily limit: ${DAILY_LIMIT}`);
   console.log(`  OpenAI proxy: ${OPENAI_API_KEY ? 'enabled' : 'mocked (set OPENAI_API_KEY to enable)'}\n`);

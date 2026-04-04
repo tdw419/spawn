@@ -1,7 +1,7 @@
 {
-  "name": "paperclip-setup",
+  "name": "spawn",
   "version": "0.1.0",
-  "description": "One-click setup wizard for Paperclip projects",
+  "description": "One-click setup wizard for AI agent environments",
   "scripts": {
     "dev": "npx tauri dev",
     "build": "npx tauri build",

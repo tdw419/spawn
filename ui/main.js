@@ -1,4 +1,4 @@
-// ── Paperclip + Hermes Setup Wizard ────────────────────────────
+// ── Spawn Setup Wizard ────────────────────────────────────
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
 

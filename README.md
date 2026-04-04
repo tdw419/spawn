@@ -1,39 +1,47 @@
-# Paperclip Setup
+# Spawn
 
-One-click installer for Paperclip + Hermes AI agent setup.
+One-click AI agent environment setup. Download, double-click, done.
 
 ## What It Does
 
-A desktop wizard (Tauri) that sets up everything a new user needs:
-1. **Free AI access** via Paperclip Cloud proxy (no API key needed)
+A desktop wizard that gets a non-technical user from zero to a working AI agent environment:
+
+1. **Free AI access** via Spawn Cloud proxy (no API key, no credit card)
 2. **Hermes Agent** installed and configured automatically
 3. **Paperclip** project management with pre-built company templates
-4. **Project clone** ready to contribute
+4. **Project repo** cloned and ready
 
 3 clicks. 0 terminals. 0 API keys.
 
 ## User Flow
 
-1. Download the installer for your OS (.deb / .AppImage / .msi / .dmg)
-2. Double-click to open
-3. **Connect** -- auto-registers for free cloud AI access
-4. **Pick a project** -- Geometry OS, ASCII World, or AIPM
-5. **Install** -- Hermes, Paperclip, project template, all configured
-6. Done. Run `hermes chat` to start.
+```
+Download -> Double-click -> Connect -> Pick Project -> Done
+```
+
+1. **Connect** -- auto-registers for free cloud AI access (50 messages/day)
+2. **Pick a project** -- Geometry OS, ASCII World, AIPM
+3. **Install** -- Hermes, Paperclip, project template, all configured
+4. Run `hermes chat` to start
+
+## Downloads
+
+| Platform | File | Size |
+|----------|------|------|
+| Linux (Ubuntu/Debian) | `.deb` | ~3MB |
+| Linux (universal) | `.AppImage` | ~74MB |
+| Windows | `.msi` | TBD |
+| macOS (Apple Silicon) | `.dmg` | TBD |
+| macOS (Intel) | `.dmg` | TBD |
 
 ## Development
 
 ```bash
-# Install deps
 npm install
-
-# Run in dev mode (needs frontend dev server or static build)
-npm run dev
-
-# Build installers
-npm run build:linux     # .deb + .AppImage
-npm run build:windows   # .msi + .nsis (needs Windows or CI)
-npm run build:mac       # .dmg + .app (needs macOS or CI)
+npm run dev            # Run in dev mode
+npm run build:linux    # Build .deb + .AppImage
+npm run build:windows  # Build .msi (needs Windows or CI)
+npm run build:mac      # Build .dmg (needs macOS or CI)
 ```
 
 ## Cloud Dev Server
@@ -42,30 +50,42 @@ Test the cloud proxy locally:
 
 ```bash
 cd cloud
-node dev-server.js              # Mock mode (no OpenAI key)
-OPENAI_API_KEY=sk-... node dev-server.js  # Real proxy mode
+node dev-server.js                              # Mock mode
+OPENAI_API_KEY=sk-... node dev-server.js        # Real proxy mode
 ```
 
 ## Architecture
 
 ```
-ui/           -- Setup wizard (HTML/CSS/JS, dark theme)
-src-tauri/    -- Rust backend (process management, CLI orchestration)
-  src/lib.rs  -- Commands: connect_cloud, run_setup, list_projects
-cloud/        -- Cloudflare Worker (token issuer + OpenAI proxy)
-  worker.js   -- Production: deploy with wrangler
-  dev-server.js -- Local dev: node dev-server.js
-templates/    -- Bundled company export packages
-  geometry-os/  -- Geometry OS company template
-  ascii-world/  -- ASCII World company template
+ui/             Setup wizard frontend (HTML/CSS/JS)
+src-tauri/      Rust backend (Tauri)
+  src/lib.rs    Commands: connect_cloud, run_setup, list_projects
+cloud/          Cloud API (Cloudflare Worker)
+  worker.js     Production: deploy with wrangler
+  dev-server.js Local dev server
+templates/      Bundled company export packages
+  geometry-os/
+  ascii-world/
 ```
 
-## Deployment
+## Deploy Cloud
 
-1. Deploy cloud worker: `cd cloud && wrangler deploy`
-2. Set secret: `wrangler secret put OPENAI_API_KEY`
-3. Push a tag: `git tag v0.1.0 && git push --tags`
-4. GitHub Actions builds installers for Linux, Windows, and macOS
+```bash
+cd cloud
+wrangler login
+wrangler kv:namespace create "KV"
+# Put the namespace ID in wrangler.toml
+wrangler secret put OPENAI_API_KEY
+wrangler deploy
+```
+
+## Ship a Release
+
+```bash
+git tag v0.1.0
+git push --tags
+# GitHub Actions builds all platforms and creates a draft release
+```
 
 ## License
 

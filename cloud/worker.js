@@ -1,10 +1,10 @@
 /**
- * Paperclip Cloud API — Cloudflare Worker
+ * Spawn Cloud API -- Cloudflare Worker
  *
  * Two endpoints:
- *   POST /v1/register   — issues a free anonymous token
- *   POST /v1/chat/completions — proxies chat requests to OpenAI (rate-limited)
- *   GET  /v1/status      — returns usage for a token
+ *   POST /v1/register        -- issues a free anonymous token
+ *   POST /v1/chat/completions -- proxies chat requests to OpenAI (rate-limited)
+ *   GET  /v1/status           -- returns usage for a token
  *
  * Deploy: wrangler deploy
  * Secrets: wrangler secret put OPENAI_API_KEY

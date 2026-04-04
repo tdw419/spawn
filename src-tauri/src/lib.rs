@@ -4,7 +4,7 @@ use tauri::{Emitter, Window};
 
 // ── Config ─────────────────────────────────────────────────────────────
 
-const CLOUD_API_BASE: &str = "https://api.paperclip.dev";
+const CLOUD_API_BASE: &str = "https://api.spawn.dev";
 const CLOUD_API_FALLBACK: &str = "http://localhost:8787";
 const HERMES_INSTALL_URL: &str = "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh";
 
@@ -156,7 +156,7 @@ fn resolve_resource(relative_path: &str) -> Option<String> {
 
     // Try XDG data dir (Linux .deb install)
     if let Ok(home) = std::env::var("HOME") {
-        let installed = format!("{}/.local/share/paperclip-setup/{}", home, relative_path);
+        let installed = format!("{}/.local/share/spawn/{}", home, relative_path);
         if std::path::Path::new(&installed).exists() {
             return Some(installed);
         }
@@ -180,7 +180,7 @@ async fn try_cloud_register(base_url: &str) -> Result<RegisterResponse, String> 
         .post(format!("{}/v1/register", base_url))
         .json(&serde_json::json!({
             "device_id": uuid::Uuid::new_v4().to_string(),
-            "product": "paperclip-setup"
+            "product": "spawn"
         }))
         .timeout(std::time::Duration::from_secs(10))
         .send()

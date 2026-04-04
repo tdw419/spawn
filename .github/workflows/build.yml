@@ -56,8 +56,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'Paperclip Setup ${{ github.ref_name }}'
-          releaseBody: 'One-click setup wizard for Paperclip + Hermes'
+          releaseName: 'Spawn ${{ github.ref_name }}'
+          releaseBody: 'One-click AI agent environment setup'
           releaseDraft: true
           prerelease: false
           args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
