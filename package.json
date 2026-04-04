@@ -1,0 +1,15 @@
+{
+  "name": "paperclip-setup",
+  "version": "0.1.0",
+  "description": "One-click setup wizard for Paperclip projects",
+  "scripts": {
+    "dev": "npx tauri dev",
+    "build": "npx tauri build",
+    "build:linux": "npx tauri build --bundles deb appimage",
+    "build:windows": "npx tauri build --bundles msi nsis",
+    "build:mac": "npx tauri build --bundles dmg app"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

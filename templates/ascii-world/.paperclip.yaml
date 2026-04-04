@@ -1,0 +1,84 @@
+schema: "paperclip/v1"
+agents:
+  ceo:
+    role: "ceo"
+    adapter:
+      config:
+        hermesCommand: "/home/jericho/zion/projects/aipm/bin/aipm_hermes_generic.sh"
+        model: "glm-5.1"
+        persistSession: true
+        timeoutSec: 300
+      type: "hermes_local"
+    permissions:
+      canCreateAgents: true
+  engineer:
+    role: "engineer"
+    adapter:
+      config:
+        hermesCommand: "/home/jericho/zion/projects/aipm/bin/aipm_hermes_generic.sh"
+        model: "glm-5.1"
+        timeoutSec: 600
+      type: "hermes_local"
+projects:
+  agent-dashboard:
+    color: "#ef4444"
+    status: "backlog"
+  paperclip-integration:
+    color: "#8b5cf6"
+    status: "backlog"
+  pxos-core:
+    color: "#6366f1"
+    status: "backlog"
+  visual-intelligence:
+    color: "#ec4899"
+    status: "backlog"
+sidebar:
+  agents:
+    - "ceo"
+    - "engineer"
+  projects:
+    - "agent-dashboard"
+    - "paperclip-integration"
+    - "pxos-core"
+    - "visual-intelligence"
+tasks:
+  asc-1:
+    identifier: "ASC-1"
+    priority: "high"
+    status: "done"
+  asc-10:
+    identifier: "ASC-10"
+    priority: "high"
+    status: "backlog"
+  asc-2:
+    identifier: "ASC-2"
+    priority: "medium"
+    status: "done"
+  asc-3:
+    identifier: "ASC-3"
+    priority: "medium"
+    status: "done"
+  asc-4:
+    identifier: "ASC-4"
+    priority: "high"
+    status: "done"
+  asc-5:
+    identifier: "ASC-5"
+    priority: "medium"
+    status: "done"
+  asc-6:
+    identifier: "ASC-6"
+    priority: "high"
+    status: "done"
+  asc-7:
+    identifier: "ASC-7"
+    priority: "medium"
+    status: "done"
+  asc-8:
+    identifier: "ASC-8"
+    priority: "medium"
+    status: "done"
+  asc-9:
+    identifier: "ASC-9"
+    priority: "medium"
+    status: "done"

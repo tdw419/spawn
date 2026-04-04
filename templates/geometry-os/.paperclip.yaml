@@ -1,0 +1,156 @@
+schema: "paperclip/v1"
+agents:
+  ceo:
+    role: "ceo"
+    adapter:
+      config:
+        hermesCommand: "/home/jericho/zion/projects/aipm/bin/aipm_hermes_generic.sh"
+        model: "glm-5.1"
+        persistSession: true
+        timeoutSec: 300
+      type: "hermes_local"
+    runtime:
+      heartbeat:
+        enabled: true
+        intervalSec: 120
+    permissions:
+      canCreateAgents: true
+  rust-engineer:
+    role: "engineer"
+    adapter:
+      config:
+        hermesCommand: "/home/jericho/zion/projects/aipm/bin/aipm_hermes_generic.sh"
+        model: "glm-5.1"
+        timeoutSec: 600
+      type: "hermes_local"
+    runtime:
+      heartbeat:
+        enabled: true
+        intervalSec: 60
+projects:
+  phase-1-the-machine-runs:
+    color: "#6366f1"
+    status: "completed"
+  phase-2-the-machine-speaks:
+    color: "#8b5cf6"
+    status: "backlog"
+  phase-3-the-machine-writes-programs:
+    color: "#ec4899"
+    status: "backlog"
+  phase-4-the-machine-improves-itself:
+    color: "#ef4444"
+    status: "backlog"
+sidebar:
+  agents:
+    - "ceo"
+    - "rust-engineer"
+  projects:
+    - "phase-1-the-machine-runs"
+    - "phase-2-the-machine-speaks"
+    - "phase-3-the-machine-writes-programs"
+    - "phase-4-the-machine-improves-itself"
+tasks:
+  geo-1:
+    identifier: "GEO-1"
+    priority: "high"
+    status: "done"
+  geo-10:
+    identifier: "GEO-10"
+    priority: "medium"
+    status: "done"
+  geo-11:
+    identifier: "GEO-11"
+    priority: "low"
+    status: "done"
+  geo-12:
+    identifier: "GEO-12"
+    priority: "high"
+    status: "done"
+  geo-13:
+    identifier: "GEO-13"
+    priority: "high"
+    status: "done"
+  geo-14:
+    identifier: "GEO-14"
+    priority: "medium"
+    status: "done"
+  geo-15:
+    identifier: "GEO-15"
+    priority: "medium"
+    status: "done"
+  geo-17:
+    identifier: "GEO-17"
+    priority: "high"
+    status: "done"
+  geo-18:
+    identifier: "GEO-18"
+    priority: "high"
+    status: "done"
+  geo-19:
+    identifier: "GEO-19"
+    priority: "high"
+    status: "done"
+  geo-2:
+    identifier: "GEO-2"
+    priority: "high"
+    status: "done"
+  geo-20:
+    identifier: "GEO-20"
+    priority: "medium"
+    status: "done"
+  geo-21:
+    identifier: "GEO-21"
+    priority: "critical"
+    status: "in_progress"
+  geo-22:
+    identifier: "GEO-22"
+    priority: "critical"
+    status: "backlog"
+  geo-23:
+    identifier: "GEO-23"
+    priority: "high"
+    status: "backlog"
+  geo-24:
+    identifier: "GEO-24"
+    priority: "high"
+    status: "backlog"
+  geo-25:
+    identifier: "GEO-25"
+    priority: "critical"
+    status: "in_progress"
+  geo-26:
+    identifier: "GEO-26"
+    priority: "high"
+    status: "backlog"
+  geo-27:
+    identifier: "GEO-27"
+    priority: "high"
+    status: "backlog"
+  geo-3:
+    identifier: "GEO-3"
+    priority: "medium"
+    status: "done"
+  geo-4:
+    identifier: "GEO-4"
+    priority: "medium"
+    status: "done"
+  geo-5:
+    identifier: "GEO-5"
+    priority: "critical"
+    status: "done"
+  geo-6:
+    identifier: "GEO-6"
+    priority: "critical"
+    status: "done"
+  geo-7:
+    identifier: "GEO-7"
+    priority: "critical"
+    status: "done"
+  geo-8:
+    identifier: "GEO-8"
+    priority: "high"
+    status: "done"
+  geo-9:
+    identifier: "GEO-9"
+    priority: "medium"
+    status: "done"

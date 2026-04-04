@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paperclip + Hermes Setup</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="logo">paperclip <span class="dim">+</span> hermes</div>
+      <div class="subtitle">One-click AI agent setup</div>
+    </header>
+
+    <nav class="steps">
+      <div class="step" data-step="1" id="step-1"><span class="num">1</span> Connect</div>
+      <div class="step" data-step="2" id="step-2"><span class="num">2</span> Project</div>
+      <div class="step" data-step="3" id="step-3"><span class="num">3</span> Install</div>
+    </nav>
+
+    <main>
+      <!-- Panel 1: Cloud Connect -->
+      <section id="panel-1" class="panel active">
+        <h2>Get Started Free</h2>
+        <p>Connect for free AI access. No credit card, no signup, no API keys.</p>
+
+        <div id="connect-box" class="connect-box">
+          <div class="connect-spinner">
+            <div class="spinner large"></div>
+          </div>
+          <div class="connect-text" id="connect-text">Connecting to Paperclip Cloud...</div>
+        </div>
+
+        <div id="connect-result" class="hidden">
+          <div id="connect-success" class="hidden">
+            <div class="result-banner ok">
+              <span class="icon">&#10003;</span>
+              <div>
+                <strong>Connected!</strong>
+                <span id="quota-text">50 free AI messages per day.</span>
+              </div>
+            </div>
+          </div>
+          <div id="connect-failed" class="hidden">
+            <div class="result-banner fail">
+              <span class="icon">&#10007;</span>
+              <div>
+                <strong>Cloud unavailable</strong>
+                <span>You can still continue with your own API key.</span>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="manual-key">API Key (optional)</label>
+              <input type="password" id="manual-key" placeholder="sk-..." />
+              <span class="input-hint">Leave blank to skip — you can add it later with <code>hermes setup</code></span>
+            </div>
+          </div>
+        </div>
+
+        <button id="btn-next-1" class="btn primary" disabled>Next</button>
+      </section>
+
+      <!-- Panel 2: Pick project -->
+      <section id="panel-2" class="panel">
+        <h2>Choose a Project</h2>
+        <p>Which project would you like to contribute to?</p>
+        <div id="project-list" class="project-list"></div>
+        <button id="btn-next-2" class="btn primary" disabled>Install</button>
+        <button class="btn back" onclick="goStep(1)">Back</button>
+      </section>
+
+      <!-- Panel 3: Installing -->
+      <section id="panel-3" class="panel">
+        <h2 id="install-title">Installing...</h2>
+        <div id="progress-list" class="check-list"></div>
+        <div id="done-section" class="hidden">
+          <h2 class="success">You're all set!</h2>
+          <div class="done-box">
+            <p>Your AI agent is ready. Open a terminal and run:</p>
+            <code>hermes chat</code>
+            <p class="hint">Or pick a project directory first:</p>
+            <code id="project-cd"></code>
+          </div>
+          <button class="btn primary" onclick="closeWindow()">Done</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
