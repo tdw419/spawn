@@ -368,7 +368,7 @@ async fn run_setup(
             step: "Hermes Config".into(),
             success: true,
             message: if has_cloud {
-                "Connected via Paperclip Cloud (free)".into()
+                "Connected via Spawn Cloud (free)".into()
             } else {
                 "API key configured".into()
             },

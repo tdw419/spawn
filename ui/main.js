@@ -152,7 +152,7 @@ function updateProgress(list, step, success, message) {
   } else {
     item.className = 'check-item ' + (success ? 'ok' : 'fail');
     item.innerHTML =
-      '<span class="icon">' + (success ? '✓' : '✗') + '</span>' +
+      '<span class="icon">' + (success ? '\u2713' : '\u2717') + '</span>' +
       '<span class="label">' + step + '</span>' +
       (message ? '<span class="detail">' + message + '</span>' : '');
   }
@@ -162,7 +162,7 @@ function addResult(list, step, success, message) {
   const div = document.createElement('div');
   div.className = 'check-item ' + (success ? 'ok' : 'fail');
   div.innerHTML =
-    '<span class="icon">' + (success ? '✓' : '✗') + '</span>' +
+    '<span class="icon">' + (success ? '\u2713' : '\u2717') + '</span>' +
     '<span class="label">' + step + '</span>' +
     (message ? '<span class="detail">' + message + '</span>' : '');
   list.appendChild(div);
