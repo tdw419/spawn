@@ -17,7 +17,7 @@ const tokens = new Map();
 
 // Config
 const DAILY_LIMIT = 50;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
+const ZAI_API_KEY = process.env.ZAI_API_KEY || '';
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
@@ -89,7 +89,7 @@ const server = http.createServer(async (req, res) => {
     data.daily_used += 1;
     tokens.set(token, data);
 
-    if (!OPENAI_API_KEY) {
+    if (!ZAI_API_KEY) {
       // Dev mode: return a fake response instead of proxying
       console.log(`[chat] Token ${token.slice(0, 8)}... request ${data.daily_used}/${data.daily_limit} (mocked)`);
       const body = await readBody(req);
@@ -103,7 +103,7 @@ const server = http.createServer(async (req, res) => {
           index: 0,
           message: {
             role: 'assistant',
-            content: `[Dev mode] Spawn Cloud proxy is working. Token ${token.slice(0, 8)}... request ${data.daily_used}/${data.daily_limit}. Set OPENAI_API_KEY env var to proxy real requests.`,
+            content: `[Dev mode] Spawn Cloud proxy is working. Token ${token.slice(0, 8)}... request ${data.daily_used}/${data.daily_limit}. Set ZAI_API_KEY env var to proxy real requests.`,
           },
           finish_reason: 'stop',
         }],
@@ -116,11 +116,11 @@ const server = http.createServer(async (req, res) => {
     // Proxy to real OpenAI
     const body = await readBody(req);
     try {
-      const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
+      const openaiRes = await fetch('https://api.z.ai/api/coding/paas/v4/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Authorization': `Bearer ${ZAI_API_KEY}`,
         },
         body: body,
       });
@@ -165,5 +165,5 @@ server.listen(PORT, () => {
   console.log(`\n  Spawn Cloud Dev Server`);
   console.log(`  http://localhost:${PORT}`);
   console.log(`  Daily limit: ${DAILY_LIMIT}`);
-  console.log(`  OpenAI proxy: ${OPENAI_API_KEY ? 'enabled' : 'mocked (set OPENAI_API_KEY to enable)'}\n`);
+  console.log(`  OpenAI proxy: ${ZAI_API_KEY ? 'enabled' : 'mocked (set ZAI_API_KEY to enable)'}\n`);
 });

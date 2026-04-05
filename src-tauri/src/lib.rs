@@ -353,7 +353,7 @@ async fn run_setup(
         // Set model to a good default
         lines = lines.into_iter().filter(|l| !l.starts_with("LLM_MODEL=")).collect();
         if has_cloud {
-            lines.push("LLM_MODEL=gpt-4o-mini".into());
+            lines.push("LLM_MODEL=glm-4.5-air".into());
         } else {
             lines.push("LLM_MODEL=gpt-4o".into());
         }
