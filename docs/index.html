@@ -154,22 +154,6 @@
     font-size: 0.8rem;
     color: var(--text-dim);
   }
-  .coming-soon {
-    opacity: 0.5;
-    position: relative;
-  }
-  .coming-soon::after {
-    content: 'Coming soon';
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    background: #f59e0b;
-    color: #000;
-    font-size: 0.65rem;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 4px;
-  }
 </style>
 </head>
 <body>
@@ -182,32 +166,39 @@
   </div>
 
   <div class="downloads">
-    <a class="dl-btn" href="https://github.com/tdw419/spawn/releases/latest/download/Spawn_0.1.0_amd64.deb">
-      <span class="icon">🐧</span>
+    <a class="dl-btn" href="https://github.com/tdw419/spawn/releases/download/v0.1.0/Spawn_0.1.0_amd64.deb">
+      <span class="icon">&#127470;&#127477;</span>
       <div>
         <div class="platform">Linux (.deb)</div>
-        <div class="detail">Ubuntu, Debian, Mint -- 3 MB</div>
+        <div class="detail">Ubuntu, Debian, Mint</div>
       </div>
     </a>
-    <a class="dl-btn" href="https://github.com/tdw419/spawn/releases/latest/download/Spawn_0.1.0_amd64.AppImage">
-      <span class="icon">🐧</span>
+    <a class="dl-btn" href="https://github.com/tdw419/spawn/releases/download/v0.1.0/Spawn_0.1.0_amd64.AppImage">
+      <span class="icon">&#127470;&#127477;</span>
       <div>
         <div class="platform">Linux (.AppImage)</div>
-        <div class="detail">Any distro -- 74 MB</div>
+        <div class="detail">Any distro</div>
       </div>
     </a>
-    <a class="dl-btn coming-soon" href="#">
-      <span class="icon">🪟</span>
+    <a class="dl-btn" href="https://github.com/tdw419/spawn/releases/download/v0.1.0/Spawn_0.1.0_x64-setup.exe">
+      <span class="icon">&#127390;</span>
       <div>
-        <div class="platform">Windows (.msi)</div>
+        <div class="platform">Windows (.exe)</div>
         <div class="detail">Windows 10+</div>
       </div>
     </a>
-    <a class="dl-btn coming-soon" href="#">
-      <span class="icon">🍎</span>
+    <a class="dl-btn" href="https://github.com/tdw419/spawn/releases/download/v0.1.0/Spawn_0.1.0_aarch64.dmg">
+      <span class="icon">&#127822;</span>
       <div>
-        <div class="platform">macOS (.dmg)</div>
-        <div class="detail">Apple Silicon + Intel</div>
+        <div class="platform">macOS Apple Silicon (.dmg)</div>
+        <div class="detail">M1/M2/M3/M4</div>
+      </div>
+    </a>
+    <a class="dl-btn" href="https://github.com/tdw419/spawn/releases/download/v0.1.0/Spawn_0.1.0_x64.dmg">
+      <span class="icon">&#127822;</span>
+      <div>
+        <div class="platform">macOS Intel (.dmg)</div>
+        <div class="detail">Intel-based Macs</div>
       </div>
     </a>
   </div>
@@ -235,7 +226,7 @@
 </div>
 
 <div class="info">
-  <p>Spawn sets up <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> (a CLI AI assistant) and <a href="https://github.com/paperclip-ai/paperclip">Paperclip</a> (project management) with zero configuration.</p>
+  <p>Spawn sets up <a href="https://github.com/NousResearch/hermes-agent">Hermes Agent</a> (a CLI AI assistant) with zero configuration.</p>
   <p>Free tier: 50 AI messages per day via Spawn Cloud. Bring your own OpenAI key for unlimited use.</p>
   <p><a href="https://github.com/tdw419/spawn">Source code on GitHub</a> -- MIT license</p>
 </div>
