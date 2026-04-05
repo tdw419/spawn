@@ -1,10 +1,10 @@
 name = "spawn-cloud"
 main = "worker.js"
-compatibility_date = "2024-01-01"
+compatibility_date = "2024-04-03"
 
 [vars]
 DAILY_LIMIT = "50"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "b89442338ca8477999605a2d30faca2d"

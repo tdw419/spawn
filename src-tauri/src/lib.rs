@@ -4,7 +4,7 @@ use tauri::{Emitter, Window};
 
 // ── Config ─────────────────────────────────────────────────────────────
 
-const CLOUD_API_BASE: &str = "https://api.spawn.dev";
+const CLOUD_API_BASE: &str = "https://spawn-cloud.tdw419.workers.dev";
 const CLOUD_API_FALLBACK: &str = "http://localhost:8787";
 const HERMES_INSTALL_URL: &str = "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh";
 
