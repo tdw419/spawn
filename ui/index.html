@@ -20,16 +20,19 @@
     </nav>
 
     <main>
-      <!-- Panel 1: Cloud Connect -->
+      <!-- Panel 1: Cloud Connect + Hardware Detection -->
       <section id="panel-1" class="panel active">
         <h2>Get Started Free</h2>
         <p>Connect for free AI access. No credit card, no signup, no API keys.</p>
+
+        <!-- Hardware detection result -->
+        <div id="hardware-box" class="hidden"></div>
 
         <div id="connect-box" class="connect-box">
           <div class="connect-spinner">
             <div class="spinner large"></div>
           </div>
-          <div class="connect-text" id="connect-text">Connecting to Spawn Cloud...</div>
+          <div class="connect-text" id="connect-text">Detecting hardware &amp; connecting...</div>
         </div>
 
         <div id="connect-result" class="hidden">
@@ -53,7 +56,7 @@
             <div class="input-group">
               <label for="manual-key">API Key (optional)</label>
               <input type="password" id="manual-key" placeholder="sk-..." />
-              <span class="input-hint">Leave blank to skip — you can add it later with <code>hermes setup</code></span>
+              <span class="input-hint">Leave blank to skip -- you can add it later with <code>hermes setup</code></span>
             </div>
           </div>
         </div>

@@ -7,6 +7,7 @@ let selectedProject = null;
 let selectedProjectName = null;
 let cloudToken = null;
 let manualKey = null;
+let hardwareProfile = null;
 
 // ── Navigation ────────────────────────────────────────────────
 
@@ -28,30 +29,77 @@ function closeWindow() {
   window.__TAURI__.window.getCurrentWindow().close();
 }
 
-// ── Step 1: Cloud Connect ─────────────────────────────────────
+// ── Step 1: Hardware detect + Cloud Connect ────────────────────
 
 async function autoConnect() {
-  try {
-    const status = await invoke('connect_cloud');
+  // Detect hardware in parallel with cloud connect
+  const [hwResult, cloudResult] = await Promise.allSettled([
+    invoke('detect_system'),
+    invoke('connect_cloud'),
+  ]);
 
-    if (status.connected) {
-      cloudToken = status.token;
-      showConnectOk(status.daily_limit || 50);
-    } else {
-      showConnectFailed();
-    }
-  } catch (e) {
+  // Store hardware profile
+  if (hwResult.status === 'fulfilled') {
+    hardwareProfile = hwResult.value;
+    renderHardwareInfo(hardwareProfile);
+  }
+
+  // Handle cloud
+  if (cloudResult.status === 'fulfilled' && cloudResult.value.connected) {
+    cloudToken = cloudResult.value.token;
+    showConnectOk(cloudResult.value.daily_limit || 50);
+  } else {
     showConnectFailed();
   }
+}
+
+function renderHardwareInfo(hw) {
+  const box = document.getElementById('hardware-box');
+  if (!box) return;
+
+  let icon, label, detail, color;
+
+  if (hw.tier === 'gpu-powerful') {
+    icon = '🚀';
+    label = 'Powerful GPU detected';
+    detail = (hw.gpu_name || 'GPU') + ' -- ' + (hw.vram_mb ? (hw.vram_mb / 1024).toFixed(1) + ' GB VRAM' : '');
+    color = 'ok';
+  } else if (hw.tier === 'gpu-basic') {
+    icon = '⚡';
+    label = 'GPU detected';
+    detail = (hw.gpu_name || 'GPU') + ' -- ' + (hw.vram_mb ? (hw.vram_mb / 1024).toFixed(1) + ' GB VRAM' : '');
+    color = 'ok';
+  } else if (hw.tier === 'cpu-only') {
+    icon = '💻';
+    label = 'CPU-only mode';
+    detail = (hw.ram_mb / 1024).toFixed(0) + ' GB RAM -- small model will be used';
+    color = 'warn';
+  } else {
+    icon = '☁️';
+    label = 'Cloud-only mode';
+    detail = 'Not enough resources for local AI. Cloud access will be used.';
+    color = 'warn';
+  }
+
+  box.innerHTML =
+    '<div class="hw-card ' + color + '">' +
+      '<span class="hw-icon">' + icon + '</span>' +
+      '<div class="hw-info">' +
+        '<strong>' + label + '</strong>' +
+        '<span class="hw-detail">' + detail + '</span>' +
+        '<span class="hw-model">Will install: ' + hw.model + ' (' + hw.model_size + ')</span>' +
+      '</div>' +
+    '</div>';
+  box.classList.remove('hidden');
 }
 
 function showConnectOk(limit) {
   document.getElementById('connect-box').classList.add('hidden');
   document.getElementById('connect-result').classList.remove('hidden');
   document.getElementById('connect-success').classList.remove('hidden');
-  document.getElementById('quota-text').textContent = limit + ' free AI messages per day. No credit card.';
+  document.getElementById('quota-text').textContent = limit + ' free AI messages per day as backup. No credit card.';
   document.getElementById('btn-next-1').disabled = false;
-  document.getElementById('btn-next-1').textContent = 'Continue';
+  document.getElementById('btn-next-1').textContent = 'Next';
 }
 
 function showConnectFailed() {
@@ -115,10 +163,12 @@ async function startInstall() {
   });
 
   try {
+    const skipOllama = hardwareProfile && hardwareProfile.tier === 'cloud-only';
     const results = await invoke('run_setup', {
       projectId: selectedProject,
       cloudToken: cloudToken,
       manualApiKey: manualKey || null,
+      skipOllama: skipOllama,
     });
 
     list.innerHTML = '';

@@ -300,3 +300,55 @@ p { color: var(--text-muted); font-size: 13px; margin-bottom: 6px; line-height: 
 }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Hardware info card ─────────────────────────────────── */
+
+#hardware-box {
+  margin: 10px 0;
+}
+
+.hw-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.hw-card.ok {
+  background: rgba(74, 222, 128, 0.06);
+  border: 1px solid rgba(74, 222, 128, 0.15);
+}
+
+.hw-card.warn {
+  background: rgba(251, 191, 36, 0.06);
+  border: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.hw-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.hw-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hw-info strong {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.hw-detail {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.hw-model {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 500;
+}

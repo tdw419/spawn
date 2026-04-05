@@ -51,6 +51,19 @@ struct RegisterResponse {
     daily_limit: u32,
 }
 
+#[derive(Serialize, Clone)]
+struct HardwareProfile {
+    tier: String,           // "gpu-powerful", "gpu-basic", "cpu-only", "cloud-only"
+    backend: String,        // "ollama" or "cloud"
+    model: String,          // model name to pull
+    model_size: String,     // human-readable size
+    vram_mb: Option<u64>,   // VRAM in MB if GPU detected
+    ram_mb: u64,            // system RAM in MB
+    gpu_name: Option<String>,
+    has_cuda: bool,
+    has_metal: bool,
+}
+
 // ── Available projects ─────────────────────────────────────────────────
 
 fn get_projects() -> Vec<Project> {
@@ -82,6 +95,141 @@ fn get_projects() -> Vec<Project> {
     ]
 }
 
+// ── Hardware detection ─────────────────────────────────────────────────
+
+fn detect_hardware() -> HardwareProfile {
+    let (ram_mb, has_cuda, vram_mb, gpu_name) = detect_gpu_and_ram();
+    let has_metal = detect_metal();
+
+    let (tier, backend, model, model_size) = if has_cuda && vram_mb.unwrap_or(0) >= 4096 {
+        ("gpu-powerful".into(), "ollama".into(), "qwen2.5-coder:7b".into(), "4.7 GB")
+    } else if has_cuda && vram_mb.unwrap_or(0) >= 2048 {
+        ("gpu-basic".into(), "ollama".into(), "qwen2.5-coder:3b".into(), "1.9 GB")
+    } else if has_metal {
+        // Apple Silicon -- unified memory, assume decent
+        ("gpu-powerful".into(), "ollama".into(), "qwen2.5-coder:7b".into(), "4.7 GB")
+    } else if ram_mb >= 8192 {
+        ("cpu-only".into(), "ollama".into(), "qwen2.5-coder:1.5b".into(), "1.1 GB")
+    } else {
+        ("cloud-only".into(), "cloud".into(), "glm-4.5-air".into(), "0 (cloud)")
+    };
+
+    HardwareProfile {
+        tier,
+        backend,
+        model,
+        model_size: model_size.into(),
+        vram_mb,
+        ram_mb,
+        gpu_name,
+        has_cuda,
+        has_metal,
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn detect_gpu_and_ram() -> (u64, bool, Option<u64>, Option<String>) {
+    let mut ram_mb: u64 = 4096; // default
+    let mut has_cuda = false;
+    let mut vram_mb: Option<u64> = None;
+    let mut gpu_name: Option<String> = None;
+
+    // Get RAM from /proc/meminfo
+    if let Ok(meminfo) = std::fs::read_to_string("/proc/meminfo") {
+        for line in meminfo.lines() {
+            if line.starts_with("MemTotal:") {
+                let kb: u64 = line.split_whitespace()
+                    .nth(1)
+                    .and_then(|s| s.parse().ok())
+                    .unwrap_or(4096 * 1024);
+                ram_mb = kb / 1024;
+                break;
+            }
+        }
+    }
+
+    // Check for NVIDIA GPU via nvidia-smi
+    let (ok, out) = run_cmd("nvidia-smi", &["--query-gpu=memory.total,name", "--format=csv,noheader,nounits"]);
+    if ok {
+        has_cuda = true;
+        // Parse "24576, NVIDIA RTX 5090" or similar
+        let parts: Vec<&str> = out.split(',').collect();
+        if let Some(vram_str) = parts.first() {
+            vram_mb = vram_str.trim().parse().ok();
+        }
+        if let Some(name) = parts.get(1) {
+            gpu_name = Some(name.trim().to_string());
+        }
+    }
+
+    (ram_mb, has_cuda, vram_mb, gpu_name)
+}
+
+#[cfg(target_os = "macos")]
+fn detect_gpu_and_ram() -> (u64, bool, Option<u64>, Option<String>) {
+    let mut ram_mb: u64 = 8192;
+
+    // macOS sysctl for RAM
+    let (_, out) = run_cmd("sysctl", &["-n", "hw.memsize"]);
+    if let Ok(bytes) = out.trim().parse::<u64>() {
+        ram_mb = bytes / (1024 * 1024);
+    }
+
+    // macOS doesn't have CUDA, but Metal is checked separately
+    // GPU name from system_profiler
+    let (_, out) = run_cmd("system_profiler", &["SPDisplaysDataType"]);
+    let gpu_name = out.lines()
+        .find(|l| l.contains("Chipset Model") || l.contains("Chip:"))
+        .map(|l| l.split(':').last().unwrap_or("Apple GPU").trim().to_string());
+
+    (ram_mb, false, None, gpu_name)
+}
+
+#[cfg(target_os = "windows")]
+fn detect_gpu_and_ram() -> (u64, bool, Option<u64>, Option<String>) {
+    // On Windows, use nvidia-smi if available, otherwise basic detection
+    let mut ram_mb: u64 = 8192;
+    let mut has_cuda = false;
+    let mut vram_mb: Option<u64> = None;
+    let mut gpu_name: Option<String> = None;
+
+    // Get RAM via wmic
+    let (_, out) = run_cmd("wmic", &["OS", "get", "TotalVisibleMemorySize", "/value"]);
+    for line in out.lines() {
+        if line.starts_with("TotalVisibleMemorySize=") {
+            let kb: u64 = line.split('=').nth(1).unwrap_or("0").trim().parse().unwrap_or(0);
+            ram_mb = kb / 1024;
+        }
+    }
+
+    // Check NVIDIA
+    let (ok, out) = run_cmd("nvidia-smi", &["--query-gpu=memory.total,name", "--format=csv,noheader,nounits"]);
+    if ok {
+        has_cuda = true;
+        let parts: Vec<&str> = out.split(',').collect();
+        if let Some(vram_str) = parts.first() {
+            vram_mb = vram_str.trim().parse().ok();
+        }
+        if let Some(name) = parts.get(1) {
+            gpu_name = Some(name.trim().to_string());
+        }
+    }
+
+    (ram_mb, has_cuda, vram_mb, gpu_name)
+}
+
+fn detect_metal() -> bool {
+    #[cfg(target_os = "macos")]
+    {
+        let (ok, _) = run_cmd("system_profiler", &["SPDisplaysDataType"]);
+        if ok {
+            // Metal is always available on modern macOS with Apple Silicon
+            return true;
+        }
+    }
+    false
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────
 
 fn run_cmd(program: &str, args: &[&str]) -> (bool, String) {
@@ -91,23 +239,6 @@ fn run_cmd(program: &str, args: &[&str]) -> (bool, String) {
         .stderr(Stdio::piped())
         .output()
     {
-        Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            let combined = if stdout.is_empty() { stderr } else { stdout };
-            (output.status.success(), combined.trim().to_string())
-        }
-        Err(e) => (false, e.to_string()),
-    }
-}
-
-fn run_cmd_env(program: &str, args: &[&str], env_vars: &[(&str, &str)]) -> (bool, String) {
-    let mut cmd = std::process::Command::new(program);
-    cmd.args(args);
-    for (k, v) in env_vars {
-        cmd.env(k, v);
-    }
-    match cmd.stdout(Stdio::piped()).stderr(Stdio::piped()).output() {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
@@ -139,10 +270,7 @@ fn which_exists(cmd: &str) -> bool {
         .unwrap_or(false)
 }
 
-/// Resolve a bundled resource path. In dev: relative to project root.
-/// In production: relative to the resource dir inside the app bundle.
 fn resolve_resource(relative_path: &str) -> Option<String> {
-    // Try as-is first (dev mode: relative to CWD or src-tauri)
     let candidates = vec![
         format!("../{}", relative_path),
         format!("./{}", relative_path),
@@ -154,7 +282,6 @@ fn resolve_resource(relative_path: &str) -> Option<String> {
         }
     }
 
-    // Try XDG data dir (Linux .deb install)
     if let Ok(home) = std::env::var("HOME") {
         let installed = format!("{}/.local/share/spawn/{}", home, relative_path);
         if std::path::Path::new(&installed).exists() {
@@ -247,8 +374,12 @@ fn check_prerequisites() -> Vec<PrereqCheck> {
             required: "any".into(),
             install_cmd: Some("sudo apt install curl".into()),
         },
-        // Hermes installer handles Python + Node + everything else
     ]
+}
+
+#[tauri::command]
+fn detect_system() -> HardwareProfile {
+    detect_hardware()
 }
 
 #[tauri::command]
@@ -280,6 +411,7 @@ async fn run_setup(
     project_id: String,
     cloud_token: Option<String>,
     manual_api_key: Option<String>,
+    skip_ollama: Option<bool>,
 ) -> Result<Vec<StepResult>, String> {
     let mut results = Vec::new();
     let projects = get_projects();
@@ -288,7 +420,11 @@ async fn run_setup(
         .find(|p| p.id == project_id)
         .ok_or("Unknown project")?;
 
+    let hw = detect_hardware();
+    let use_ollama = !skip_ollama.unwrap_or(false) && hw.backend == "ollama";
     let has_cloud = cloud_token.is_some();
+
+    // Determine the API key string
     let api_key = if let Some(ref token) = cloud_token {
         format!("cloud:{}", token)
     } else if let Some(ref key) = manual_api_key {
@@ -307,7 +443,6 @@ async fn run_setup(
             message: format!("Already installed ({})", ver),
         });
     } else {
-        // Hermes install script handles Python, Node, everything
         let (ok, out) = run_cmd("bash", &[
             "-c",
             &format!("curl -fsSL {} | bash -s -- --skip-setup", HERMES_INSTALL_URL),
@@ -326,62 +461,133 @@ async fn run_setup(
         }
     }
 
-    // ── Step 2: Configure Hermes model + API key ─────────────────
-    emit_step(&window, "Configuring Hermes...", true, "");
-    if !api_key.is_empty() {
-        // Write the cloud token or API key to Hermes .env
-        let home = std::env::var("HOME").unwrap_or_default();
-        let env_path = format!("{}/.hermes/.env", home);
-
-        // Read existing .env
-        let existing = std::fs::read_to_string(&env_path).unwrap_or_default();
-
-        // Build new .env with our key
-        let mut lines: Vec<String> = existing.lines().map(|l| l.to_string()).collect();
-
-        // Update or add the key
-        if has_cloud {
-            // Cloud proxy: set OPENAI_API_KEY to cloud token, OPENAI_BASE_URL to proxy
-            lines = lines.into_iter().filter(|l| !l.starts_with("OPENAI_API_KEY=") && !l.starts_with("OPENAI_BASE_URL=")).collect();
-            lines.push(format!("OPENAI_API_KEY={}", api_key));
-            lines.push(format!("OPENAI_BASE_URL={}/v1", CLOUD_API_BASE));
-        } else if api_key.starts_with("sk-") {
-            lines = lines.into_iter().filter(|l| !l.starts_with("OPENAI_API_KEY=")).collect();
-            lines.push(format!("OPENAI_API_KEY={}", api_key));
-        }
-
-        // Set model to a good default
-        lines = lines.into_iter().filter(|l| !l.starts_with("LLM_MODEL=")).collect();
-        if has_cloud {
-            lines.push("LLM_MODEL=glm-4.5-air".into());
+    // ── Step 2: Install Ollama + pull model ──────────────────────
+    if use_ollama {
+        // Install Ollama if not present
+        emit_step(&window, "Installing Ollama...", true, "");
+        if which_exists("ollama") {
+            results.push(StepResult {
+                step: "Ollama".into(),
+                success: true,
+                message: format!("Already installed ({})", get_version("ollama", "--version").unwrap_or_default()),
+            });
         } else {
-            lines.push("LLM_MODEL=gpt-4o".into());
+            let (ok, out) = run_cmd("bash", &[
+                "-c",
+                "curl -fsSL https://ollama.com/install.sh | sh",
+            ]);
+            if ok {
+                results.push(StepResult {
+                    step: "Ollama".into(),
+                    success: true,
+                    message: "Installed successfully".into(),
+                });
+            } else {
+                results.push(StepResult {
+                    step: "Ollama".into(),
+                    success: false,
+                    message: format!("Install failed: {}. Falling back to cloud.", out),
+                });
+                // Don't return -- fall back to cloud
+            }
         }
 
-        std::fs::write(&env_path, lines.join("\n") + "\n")
-            .map_err(|e| format!("Failed to write .env: {}", e))?;
+        // Start Ollama service if not running
+        if which_exists("ollama") {
+            let _ = run_cmd("ollama", &["serve"]);
+            // Give it a moment to start
+            std::thread::sleep(std::time::Duration::from_secs(2));
 
-        // Also update config.yaml for the model
-        let _ = run_cmd("hermes", &["config", "set", "model", if has_cloud { "gpt-4o-mini" } else { "gpt-4o" }]);
+            // Pull the model
+            emit_step(&window, &format!("Downloading {} ({} may take a few minutes)...", hw.model, hw.model_size), true, "");
+            let (ok, out) = run_cmd("ollama", &["pull", &hw.model]);
+            if ok {
+                results.push(StepResult {
+                    step: "AI Model".into(),
+                    success: true,
+                    message: format!("{} downloaded", hw.model),
+                });
+            } else {
+                results.push(StepResult {
+                    step: "AI Model".into(),
+                    success: false,
+                    message: format!("Download failed: {}. Using cloud fallback.", out),
+                });
+            }
+        }
+    }
+
+    // ── Step 3: Configure Hermes ─────────────────────────────────
+    emit_step(&window, "Configuring Hermes...", true, "");
+    let home = std::env::var("HOME").unwrap_or_default();
+    let env_path = format!("{}/.hermes/.env", home);
+    let existing = std::fs::read_to_string(&env_path).unwrap_or_default();
+    let mut lines: Vec<String> = existing.lines().map(|l| l.to_string()).collect();
+
+    // Determine provider config
+    let ollama_running = use_ollama && which_exists("ollama");
+
+    if ollama_running {
+        // Use Ollama as primary provider
+        lines = lines.into_iter()
+            .filter(|l| !l.starts_with("OPENAI_API_KEY=") && !l.starts_with("OPENAI_BASE_URL=") && !l.starts_with("LLM_MODEL="))
+            .collect();
+        lines.push("OPENAI_BASE_URL=http://localhost:11434/v1".into());
+        lines.push("OPENAI_API_KEY=ollama".into());  // Ollama doesn't need a real key
+        lines.push(format!("LLM_MODEL={}", hw.model));
+
+        // If we also have cloud, save it as fallback
+        if has_cloud {
+            if let Some(ref token) = cloud_token {
+                lines.push(format!("SPAWN_CLOUD_TOKEN={}", token));
+                lines.push(format!("SPAWN_CLOUD_URL={}/v1", CLOUD_API_BASE));
+            }
+        }
 
         results.push(StepResult {
             step: "Hermes Config".into(),
             success: true,
-            message: if has_cloud {
-                "Connected via Spawn Cloud (free)".into()
-            } else {
-                "API key configured".into()
-            },
+            message: format!("Connected to local Ollama ({}){}", hw.model, if has_cloud { " + cloud backup" } else { "" }),
+        });
+    } else if has_cloud {
+        // Cloud-only mode
+        lines = lines.into_iter()
+            .filter(|l| !l.starts_with("OPENAI_API_KEY=") && !l.starts_with("OPENAI_BASE_URL=") && !l.starts_with("LLM_MODEL="))
+            .collect();
+        lines.push(format!("OPENAI_API_KEY={}", api_key));
+        lines.push(format!("OPENAI_BASE_URL={}/v1", CLOUD_API_BASE));
+        lines.push("LLM_MODEL=glm-4.5-air".into());
+
+        results.push(StepResult {
+            step: "Hermes Config".into(),
+            success: true,
+            message: "Connected via Spawn Cloud (free, 50 messages/day)".into(),
+        });
+    } else if api_key.starts_with("sk-") {
+        // User's own OpenAI key
+        lines = lines.into_iter()
+            .filter(|l| !l.starts_with("OPENAI_API_KEY=") && !l.starts_with("LLM_MODEL="))
+            .collect();
+        lines.push(format!("OPENAI_API_KEY={}", api_key));
+        lines.push("LLM_MODEL=gpt-4o".into());
+
+        results.push(StepResult {
+            step: "Hermes Config".into(),
+            success: true,
+            message: "API key configured".into(),
         });
     } else {
         results.push(StepResult {
             step: "Hermes Config".into(),
             success: false,
-            message: "No API key. Run 'hermes setup' after install to add one.".into(),
+            message: "No AI backend available. Run 'hermes setup' after install.".into(),
         });
     }
 
-    // ── Step 3: Install Paperclip (optional, for project management) ──
+    std::fs::write(&env_path, lines.join("\n") + "\n")
+        .map_err(|e| format!("Failed to write .env: {}", e))?;
+
+    // ── Step 4: Install Paperclip (optional) ─────────────────────
     emit_step(&window, "Setting up Paperclip...", true, "");
     if which_exists("node") && which_exists("npx") {
         let (ok, _out) = run_cmd("npx", &["paperclipai", "onboard", "--yes"]);
@@ -398,18 +604,14 @@ async fn run_setup(
         });
     }
 
-    // ── Step 4: Import company template + plugins ────────────────
-    // Use bundled template (works offline) instead of GitHub URL
+    // ── Step 5: Import company template + plugins ────────────────
     if which_exists("npx") {
         emit_step(&window, "Importing project...", true, "");
-
-        // Resolve template path from bundled resources
         let template_path = resolve_resource(&format!("templates/{}", project_id));
 
         if let Some(tp) = template_path {
             let (ok, _out) = run_cmd("npx", &[
-                "paperclipai", "company", "import",
-                &tp, "--yes",
+                "paperclipai", "company", "import", &tp, "--yes",
             ]);
             results.push(StepResult {
                 step: "Project Import".into(),
@@ -417,7 +619,6 @@ async fn run_setup(
                 message: if ok { format!("{} imported", project.name) } else { "Import skipped".into() },
             });
         } else {
-            // Fallback: try GitHub URL if template not bundled
             let (ok, _out) = run_cmd("npx", &[
                 "paperclipai", "company", "import",
                 &project.repo_url, "--ref", "main", "--yes",
@@ -440,9 +641,8 @@ async fn run_setup(
         }
     }
 
-    // ── Step 5: Clone project repo ────────────────────────────────
+    // ── Step 6: Clone project repo ────────────────────────────────
     emit_step(&window, "Cloning project...", true, "");
-    let home = std::env::var("HOME").unwrap_or_default();
     let project_dir = format!("{}/zion/projects/{}", home, project_id);
     if !std::path::Path::new(&project_dir).exists() {
         let _ = std::fs::create_dir_all(format!("{}/zion/projects", home));
@@ -460,13 +660,21 @@ async fn run_setup(
         });
     }
 
-    // ── Step 6: Done ──────────────────────────────────────────────
+    // ── Step 7: Done ──────────────────────────────────────────────
     emit_step(&window, "Done!", true, "");
+
+    let summary = if ollama_running {
+        format!("Local AI ready ({}). Run: hermes chat", hw.model)
+    } else if has_cloud {
+        "Cloud AI ready (50 free msgs/day). Run: hermes chat".into()
+    } else {
+        "Run 'hermes setup' to add an AI provider. Run: hermes chat".into()
+    };
 
     results.push(StepResult {
         step: "Ready".into(),
         success: true,
-        message: "Open a terminal and run: hermes chat".into(),
+        message: summary,
     });
 
     Ok(results)
@@ -481,6 +689,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             list_projects,
             check_prerequisites,
+            detect_system,
             connect_cloud,
             run_setup,
         ])
